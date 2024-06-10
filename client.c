@@ -13,7 +13,6 @@
 #define SERVERIP "10.0.0.2"
 #define CLIENTIP "10.0.0.1"
 
-
 #define BUFFER_SIZE 64
 
 void communicate_with_server(int sockfd) {
@@ -22,7 +21,7 @@ void communicate_with_server(int sockfd) {
 
     while (1) {
         bzero(buffer, BUFFER_SIZE);
-        printf("Enter message (use 'write:<message>' to log or 'read' to get logs): ");
+        printf("Enter message (use 'write:<message>' to log or 'read:<number>' to get logs): ");
         n = 0;
         while ((buffer[n++] = getchar()) != '\n')
             ;

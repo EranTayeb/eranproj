@@ -12,7 +12,7 @@
 #define PORT 8080
 #define SA struct sockaddr
 #define SERVERIP "10.0.0.2"
-#define SERVERIP "10.0.0.1"
+#define CLIENTIP "10.0.0.1"
 
 #define BUFFER_SIZE 64
 #define MAX_LOGS 8
@@ -23,12 +23,17 @@ void handle_client(int connfd)
 { 
     char buffer[BUFFER_SIZE];
     char logs[MAX_LOGS][BUFFER_SIZE];
+    char mcopy[MAX_LOGS*BUFFER_SIZE];
     int log_count = 0;
     int log_index = 0;
+     int logs_to_send = 0;
+     int index =0 ;
+     int start_index;
+
     FILE *log_file;
 
     // Open log file for appending
-    log_file = fopen(LOG_FILE, "a+");
+    log_file = fopen(LOG_FILE, "w");
     if (log_file == NULL) {
         perror("Failed to open log file");
         close(connfd);
@@ -37,6 +42,8 @@ void handle_client(int connfd)
 
     while (1) {
         bzero(buffer, BUFFER_SIZE);
+        memset(mcopy, 0, MAX_LOGS*BUFFER_SIZE);
+
 
         // read the message from client and copy it in buffer 
         int read_bytes = read(connfd, buffer, sizeof(buffer) - 1);
@@ -61,17 +68,31 @@ void handle_client(int connfd)
             log_index = (log_index + 1) % MAX_LOGS;
             log_count++;
             write(connfd, "Message received and logged\n", 29);
-        } else if (strncmp(buffer, "read", 4) == 0) {
-          //  int logs_to_send = log_count > MAX_LOGS ? MAX_LOGS : log_count;
-          int logs_to_send;
+        } else if (strncmp(buffer, "read:", 5) == 0) {
+          int n = atoi(buffer + 5);
+            if(n>log_count){
+            n = log_count;
+            }
             if (log_count > MAX_LOGS) {
                    logs_to_send = MAX_LOGS;
                 } else {
                      logs_to_send = log_count;
-                        }   
-            for (int i = 0; i < logs_to_send; i++) {
-                write(connfd, logs[i], strlen(logs[i]));
+                        }  
+            index = 0 ; 
+            start_index = (log_index - n + MAX_LOGS) % MAX_LOGS;          
+
+            for (int i = 0; i < n ; i++) {
+                        index = (start_index + i) % MAX_LOGS;
+                        strcat(mcopy, logs[index]);
+                        strcat(mcopy, "\n");
+             //   write(connfd, logs[i], strlen(logs[i]));
             }
+            strcat(mcopy, "\0");
+            write(connfd, mcopy, strlen(mcopy));
+            memset(mcopy, 0, MAX_LOGS*BUFFER_SIZE);
+
+        }else {
+            write(connfd, "write only 'write:' 'read:' 'exit'\n", 36);
         }
     }
 
