@@ -1,0 +1,6 @@
+config BR2_PACKAGE_SERVER
+    bool "eranserver"
+    help
+        server package.
+
+        https://server.xyz
